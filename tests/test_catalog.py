@@ -67,10 +67,20 @@ def test_out_of_stock_has_alternatives(db):
     assert "pix" not in p
 
 
-def test_discontinued_wins_over_stock(db):
-    p = catalog.get_product(db, product_id=136)  # discontinued, but stock 13
+def test_discontinued_with_stock_is_sold_with_a_notice(db):
+    p = catalog.get_product(db, product_id=136)  # discontinued, stock 13
+    assert p["availability"] == "available"
+    assert p["stock_quantity"] == 13
+    assert "discontinued_notice" in p
+    assert "pix" in p
+    assert 136 in [x["product_id"] for x in catalog.search_products(db, category="baixos")["products"]]
+
+
+def test_discontinued_without_stock_leaves_the_catalog(db):
+    p = catalog.get_product(db, product_id=113)  # discontinued, stock 0
     assert p["availability"] == "discontinued"
-    assert "stock_quantity" not in p
+    assert p["alternatives"]
+    assert 113 not in [x["product_id"] for x in catalog.search_products(db, category="violões", limit=100)["products"]]
 
 
 def test_coming_soon_is_not_for_sale(db):
@@ -80,7 +90,8 @@ def test_coming_soon_is_not_for_sale(db):
 
 def test_unavailable_hidden_by_default(db):
     ids = [p["product_id"] for p in catalog.search_products(db, limit=100)["products"]]
-    assert 96 not in ids and 136 not in ids and 130 not in ids
+    assert 96 not in ids and 113 not in ids and 130 not in ids
+    assert 136 in ids  # discontinued but still has stock
 
 
 def test_empty_category_is_reported_not_invented(db):

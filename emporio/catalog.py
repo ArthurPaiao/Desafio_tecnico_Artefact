@@ -47,13 +47,16 @@ def _promotion(conn, product_id: int) -> dict | None:
 
 
 def _availability(row) -> str:
-    # The status column wins over stock: a discontinued model still showing
-    # stock is not sold any more (section 7.3).
-    if row["status"] == "discontinued":
-        return "discontinued"
+    # Business rule (confirmed by the store owner's side of the case): a
+    # discontinued model is sold until its remaining stock runs out, and only
+    # then leaves the catalog. Pulling it early would waste inventory already
+    # paid for. Section 7.3 of the manual still asks us to tell the customer,
+    # which is what the `discontinued_notice` field is for.
     if row["status"] == "coming_soon":
         return "coming_soon"
-    return "available" if row["stock_quantity"] > 0 else "out_of_stock"
+    if row["stock_quantity"] > 0:
+        return "available"
+    return "discontinued" if row["status"] == "discontinued" else "out_of_stock"
 
 
 def _summary(conn, row) -> dict:
@@ -79,6 +82,10 @@ def _summary(conn, row) -> dict:
         }
     if out["availability"] == "available":
         out["stock_quantity"] = row["stock_quantity"]
+        if row["status"] == "discontinued":
+            out["discontinued_notice"] = (
+                "Modelo descontinuado: restam apenas as unidades em estoque e ele não será reposto. "
+                "Informar o cliente.")
     return out
 
 
@@ -181,7 +188,7 @@ def get_product(conn, product_id: int | None = None, name: str | None = None,
         out["alternatives"] = _alternatives(conn, row)
         out["note"] = {
             "out_of_stock": "Temporariamente sem estoque. Sugerir alternativas disponíveis.",
-            "discontinued": "Não faz mais parte do catálogo. Oferecer modelos equivalentes.",
+            "discontinued": "Descontinuado e sem estoque: não faz mais parte do catálogo. Oferecer modelos equivalentes.",
             "coming_soon": "Ainda não está à venda. Não confirmar data nem reservar.",
         }[out["availability"]]
         return out
