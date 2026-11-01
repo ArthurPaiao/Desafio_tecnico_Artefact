@@ -114,6 +114,14 @@ def test_request_goes_to_chat_completions_with_bearer_key():
     assert req["body"]["model"] == "m" and req["body"]["tool_choice"] == "auto"
 
 
+def test_gemini_key_goes_in_x_goog_api_key_and_not_as_bearer():
+    post = FakePost(ok(chat({"content": "ok"})))
+    client = OpenAICompatClient("https://x", "AQ.secret", post=post, auth_header="x-goog-api-key")
+    client.messages.create(model="m", max_tokens=10, system="S", tools=[], messages=[])
+    headers = post.requests[0]["headers"]
+    assert headers["x-goog-api-key"] == "AQ.secret" and "Authorization" not in headers
+
+
 def test_rate_limit_is_retried_using_retry_after():
     sleeps = []
     post = FakePost((429, {"Retry-After": "3"}, "slow down"), ok(chat({"content": "ok"})))
@@ -168,6 +176,7 @@ def test_make_client_reads_the_right_environment(monkeypatch):
     monkeypatch.setenv("GOOGLE_API_KEY", "g")
     client, model = make_client()
     assert isinstance(client, OpenAICompatClient) and "generativelanguage" in client.url
+    assert client.auth_header == "x-goog-api-key"
     assert model == "gemini-3.8-flash"
     with pytest.raises(ProviderError, match="EMPORIO_BASE_URL"):
         monkeypatch.setenv("EMPORIO_API_KEY", "k") or make_client("openai-compatible")

@@ -115,9 +115,11 @@ def _urllib_post(url: str, headers: dict, body: bytes, timeout: float = 90):
 class OpenAICompatClient:
     """Exposes `.messages.create(...)` like the Anthropic SDK, over chat-completions."""
 
-    def __init__(self, base_url: str, api_key: str, post=None, retries: int = 3, sleep=time.sleep):
+    def __init__(self, base_url: str, api_key: str, post=None, retries: int = 3, sleep=time.sleep,
+                 auth_header: str = "Authorization"):
         self.url = base_url.rstrip("/") + "/chat/completions"
         self.api_key = api_key
+        self.auth_header = auth_header
         self.post = post or _urllib_post
         self.retries = retries
         self.sleep = sleep
@@ -129,7 +131,10 @@ class OpenAICompatClient:
             "messages": to_openai_messages(system, messages),
             "tools": to_openai_tools(tools), "tool_choice": "auto",
         }, ensure_ascii=False).encode("utf-8")
-        headers = {"Content-Type": "application/json", "Authorization": f"Bearer {self.api_key}",
+        # Google's newer "AQ." keys must travel in x-goog-api-key; sending them as a Bearer
+        # token is read as an OAuth token and rejected. Everyone else uses Bearer.
+        credential = self.api_key if self.auth_header.lower() == "x-goog-api-key" else f"Bearer {self.api_key}"
+        headers = {"Content-Type": "application/json", self.auth_header: credential,
                    "User-Agent": "emporio-agent/0.1"}
         for attempt in range(self.retries + 1):
             status, response_headers, text = self.post(self.url, headers, body)
@@ -146,7 +151,8 @@ class OpenAICompatClient:
 
 PROVIDERS = {
     "gemini": {"base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
-               "key_envs": ("GEMINI_API_KEY", "GOOGLE_API_KEY"), "model": "gemini-3.8-flash"},
+               "key_envs": ("GEMINI_API_KEY", "GOOGLE_API_KEY"), "model": "gemini-3.8-flash",
+               "auth_header": "x-goog-api-key"},
     "anthropic": {"key_envs": ("ANTHROPIC_API_KEY",), "model": "claude-sonnet-5-5"},
     "openai-compatible": {"key_envs": ("EMPORIO_API_KEY",), "model": None},  # base URL from EMPORIO_BASE_URL
 }
@@ -171,4 +177,4 @@ def make_client(provider: str | None = None):
     base_url = spec.get("base_url") or os.environ.get("EMPORIO_BASE_URL")
     if not base_url:
         raise ProviderError("Defina EMPORIO_BASE_URL (ex.: https://api.groq.com/openai/v1).")
-    return OpenAICompatClient(base_url, key), spec["model"]
+    return OpenAICompatClient(base_url, key, auth_header=spec.get("auth_header", "Authorization")), spec["model"]
