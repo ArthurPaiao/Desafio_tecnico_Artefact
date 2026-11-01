@@ -15,12 +15,13 @@ from emporio.tools import TOOL_DEFS, ToolBox
 
 DEFAULT_MODEL = "claude-sonnet-5-5"
 MAX_TOOL_ROUNDS = 6
-MAX_TOKENS = 1024
+MAX_TOKENS = 2048   # thinking models spend part of this before they start answering
 SESSIONS_DIR = Path(os.environ.get("EMPORIO_SESSIONS_DIR",
                                    Path(__file__).resolve().parent.parent / "sessions"))
 
 API_ERROR_REPLY = ("Desculpe, tive um problema técnico agora e não consegui concluir sua consulta. "
                    "Pode repetir a mensagem em instantes?")
+EMPTY_REPLY = "Não consegui formular uma resposta. Pode reescrever a pergunta?"
 TOO_MANY_STEPS_REPLY = ("Estou com dificuldade de concluir essa consulta sozinho. Posso encaminhar "
                         "para um atendente da equipe?")
 
@@ -63,6 +64,7 @@ class Agent:
         """Send one customer message, return the assistant's answer."""
         checkpoint = len(self.messages)
         self.last_tool_calls = []
+        self.last_error = None
         self.messages.append({"role": "user", "content": user_text})
         try:
             answer = self._run_turn()
@@ -71,7 +73,7 @@ class Agent:
             self.last_error = e
             return API_ERROR_REPLY
         self._save()
-        return answer
+        return answer or EMPTY_REPLY
 
     def _run_turn(self) -> str:
         for _ in range(MAX_TOOL_ROUNDS):

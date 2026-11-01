@@ -3,9 +3,10 @@ name = "emporio-agent"
 version = "0.1.0"
 description = "Customer service agent for Empório da Música (technical case)"
 requires-python = ">=3.10"
-dependencies = ["anthropic>=0.40"]
+dependencies = []   # the default (Gemini) path uses only the standard library
 
 [project.optional-dependencies]
+anthropic = ["anthropic>=0.40"]
 dev = ["pytest"]
 
 [tool.pytest.ini_options]

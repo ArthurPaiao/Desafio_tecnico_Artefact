@@ -4,7 +4,9 @@ response objects serialise back into a valid follow-up request."""
 
 import json
 
-import anthropic
+import pytest
+
+anthropic = pytest.importorskip("anthropic")
 
 try:  # newer SDK releases ship their own HTTP client package
     import httpx2 as httpx
