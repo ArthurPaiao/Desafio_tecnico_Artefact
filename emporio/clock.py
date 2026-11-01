@@ -8,10 +8,21 @@ conversations reproducible. Without it, the real time is used.
 """
 
 import os
-from datetime import date, datetime
-from zoneinfo import ZoneInfo
+from datetime import date, datetime, timedelta, timezone
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-STORE_TZ = ZoneInfo("America/Campo_Grande")
+
+def _store_timezone():
+    """Campo Grande's zone. Windows ships no IANA database, so without the `tzdata`
+    package the lookup fails; fall back to the fixed UTC-4 offset, which is
+    correct today because Mato Grosso do Sul has had no daylight saving since 2019."""
+    try:
+        return ZoneInfo("America/Campo_Grande")
+    except ZoneInfoNotFoundError:
+        return timezone(timedelta(hours=-4), "Campo Grande")
+
+
+STORE_TZ = _store_timezone()
 
 
 def now() -> datetime:

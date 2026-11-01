@@ -7,7 +7,9 @@ name = "emporio-agent"
 version = "0.1.0"
 description = "Customer service agent for Empório da Música (technical case)"
 requires-python = ">=3.10"
-dependencies = []   # the default (Gemini) path uses only the standard library
+dependencies = [
+    "tzdata; sys_platform == 'win32'",   # Windows has no system time zone database
+]   # nothing else: the default (Gemini) path uses only the standard library
 
 [project.optional-dependencies]
 anthropic = ["anthropic>=0.40"]

@@ -112,3 +112,16 @@ def test_short_real_questions_still_match():
     assert policies.search_policies("tem garantia?")["found"]
     assert "2" in top("qual o horário de funcionamento?", 2)
     assert "9" in top("como funciona a política de privacidade e meus dados?", 2)
+
+
+def test_clock_falls_back_to_a_fixed_offset_when_the_tz_database_is_missing(monkeypatch):
+    from datetime import timedelta
+    from zoneinfo import ZoneInfoNotFoundError
+
+    from emporio import clock
+
+    def missing(key):
+        raise ZoneInfoNotFoundError(key)
+
+    monkeypatch.setattr(clock, "ZoneInfo", missing)
+    assert clock._store_timezone().utcoffset(None) == timedelta(hours=-4)
