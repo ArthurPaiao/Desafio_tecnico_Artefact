@@ -176,7 +176,7 @@ def test_make_client_reads_the_right_environment(monkeypatch):
     monkeypatch.setenv("GOOGLE_API_KEY", "g")
     client, model = make_client()
     assert isinstance(client, OpenAICompatClient) and "generativelanguage" in client.url
-    assert client.auth_header == "x-goog-api-key"
+    assert client.auth_header == "Authorization"     # the compat endpoint rejects x-goog-api-key
     assert model == "gemini-3.8-flash"
     with pytest.raises(ProviderError, match="EMPORIO_BASE_URL"):
         monkeypatch.setenv("EMPORIO_API_KEY", "k") or make_client("openai-compatible")

@@ -131,8 +131,9 @@ class OpenAICompatClient:
             "messages": to_openai_messages(system, messages),
             "tools": to_openai_tools(tools), "tool_choice": "auto",
         }, ensure_ascii=False).encode("utf-8")
-        # Google's newer "AQ." keys must travel in x-goog-api-key; sending them as a Bearer
-        # token is read as an OAuth token and rejected. Everyone else uses Bearer.
+        # Gemini's OpenAI-compatible endpoint answers "Missing or invalid Authorization header" to
+        # x-goog-api-key, so every provider here uses Bearer. The x-goog-api-key option exists
+        # only for Google's native endpoint, which this client does not call.
         credential = self.api_key if self.auth_header.lower() == "x-goog-api-key" else f"Bearer {self.api_key}"
         headers = {"Content-Type": "application/json", self.auth_header: credential,
                    "User-Agent": "emporio-agent/0.1"}
@@ -151,8 +152,7 @@ class OpenAICompatClient:
 
 PROVIDERS = {
     "gemini": {"base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
-               "key_envs": ("GEMINI_API_KEY", "GOOGLE_API_KEY"), "model": "gemini-3.8-flash",
-               "auth_header": "x-goog-api-key"},
+               "key_envs": ("GEMINI_API_KEY", "GOOGLE_API_KEY"), "model": "gemini-3.8-flash"},
     "anthropic": {"key_envs": ("ANTHROPIC_API_KEY",), "model": "claude-sonnet-5-5"},
     "openai-compatible": {"key_envs": ("EMPORIO_API_KEY",), "model": None},  # base URL from EMPORIO_BASE_URL
 }
