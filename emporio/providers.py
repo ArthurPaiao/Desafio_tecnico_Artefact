@@ -17,6 +17,8 @@ import urllib.request
 import uuid
 from dataclasses import dataclass, field
 
+from emporio.env import load_dotenv
+
 RETRY_STATUSES = {429, 500, 502, 503, 504, 529}
 
 
@@ -161,11 +163,12 @@ DEFAULT_PROVIDER = "gemini"
 
 def make_client(provider: str | None = None):
     """Return (client, default_model) for a provider name (or EMPORIO_PROVIDER)."""
+    load_dotenv()
     provider = provider or os.environ.get("EMPORIO_PROVIDER", DEFAULT_PROVIDER)
     if provider not in PROVIDERS:
         raise ProviderError(f"Provedor desconhecido: {provider}. Opções: {', '.join(PROVIDERS)}.")
     spec = PROVIDERS[provider]
-    key = next((os.environ[k] for k in spec["key_envs"] if os.environ.get(k)), None)
+    key = next((os.environ[k].strip() for k in spec["key_envs"] if os.environ.get(k, "").strip()), None)
     if not key:
         raise ProviderError(f"Defina {' ou '.join(spec['key_envs'])} (veja o README).")
     if provider == "anthropic":
