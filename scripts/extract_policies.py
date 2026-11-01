@@ -5,7 +5,8 @@ committed, so running the agent needs no PDF tooling. Re-run after changing
 the PDF:  python scripts/extract_policies.py
 
 The text is kept faithful to the PDF except for the CORRECTIONS below, each of
-which fixes a contradiction inside the manual. They are listed in the README.
+which fixes an error inside the manual. (The two phone numbers are kept as printed:
+(67) 3341-4444 in the company data and (67) 3321-4500 as the WhatsApp channel.) They are listed in the README.
 """
 
 import re
@@ -19,8 +20,6 @@ OUT = ROOT / "data" / "store_policies.md"
 
 # (wrong text, replacement, why)
 CORRECTIONS = [
-    ("(67) 3321-4500", "(67) 3341-4444",
-     "Section 7 gives a different WhatsApp number from the company data table and the cover."),
     ("contato@empóriodamusica.com.br", "contato@emporiodamusica.com.br",
      "The e-mail in section 1.2 has an accent, which is not valid in a domain; the cover has none."),
 ]

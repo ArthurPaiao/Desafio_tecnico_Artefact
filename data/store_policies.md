@@ -117,7 +117,7 @@ A Empório da Música realiza promoções periódicas ao longo do ano. As princi
 
 ## 7. Atendimento via WhatsApp
 
-O canal de WhatsApp (67) 3341-4444 é o principal meio de atendimento remoto da Empório da Música. O atendimento pode ser realizado por atendentes humanos ou pelo assistente virtual.
+O canal de WhatsApp (67) 3321-4500 é o principal meio de atendimento remoto da Empório da Música. O atendimento pode ser realizado por atendentes humanos ou pelo assistente virtual.
 
 ### 7.1 Diretrizes de Atendimento
 

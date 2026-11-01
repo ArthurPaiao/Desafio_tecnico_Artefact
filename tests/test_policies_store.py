@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from emporio import policies, store
 
@@ -42,9 +42,10 @@ def test_gibberish_returns_not_found():
     assert r["found"] is False
 
 
-def test_the_corrected_whatsapp_number_is_used_everywhere():
+def test_manual_keeps_both_phone_numbers_and_fixes_only_the_email():
     text = " ".join(c["text"] for c in policies.load_chunks())
-    assert "3321-4500" not in text and "empóriodamusica" not in text
+    assert "3341-4444" in text and "3321-4500" in text
+    assert "empóriodamusica" not in text and "contato@emporiodamusica.com.br" in text
 
 
 def d(y, m, day, h, mi):
@@ -76,9 +77,30 @@ def test_holiday_is_closed_and_skipped_when_finding_next_opening():
     assert s["next_opening"] == "terça-feira, 03/11 às 09:00"
 
 
-def test_store_info_contains_one_phone_number():
+def test_store_info_lists_phone_and_whatsapp_as_printed_in_the_manual():
     info = store.store_info(d(2026, 3, 10, 10, 0))
-    assert info["phone_whatsapp"] == "(67) 3341-4444"
+    assert info["phone"] == "(67) 3341-4444" and info["whatsapp"] == "(67) 3321-4500"
+
+
+def test_easter_dates():
+    assert store.easter(2026) == date(2026, 4, 5)
+    assert store.easter(2027) == date(2027, 3, 28)
+
+
+def test_local_and_state_holidays_close_the_store():
+    # 26 Aug 2026 (Wednesday) is Campo Grande's anniversary; 11 Oct 2027 (Monday) is the state holiday.
+    assert not store.open_status(d(2026, 8, 26, 10, 0))["open"]
+    assert store.open_status(d(2026, 8, 26, 10, 0))["holiday"].startswith("Aniversário de Campo Grande")
+    assert not store.open_status(d(2027, 10, 11, 10, 0))["open"]
+    assert store.open_status(d(2026, 8, 27, 10, 0))["open"]
+
+
+def test_2027_movable_holidays_and_optional_days():
+    assert not store.open_status(d(2027, 3, 26, 10, 0))["open"]            # Good Friday
+    carnival = store.open_status(d(2027, 2, 9, 10, 0))                     # Carnival Tuesday
+    assert carnival["open"] and "warning" in carnival                      # optional: open, but confirm
+    assert "optional_holiday" in store.open_status(d(2027, 5, 27, 10, 0))  # Corpus Christi
+    assert "optional_holiday" in store.open_status(d(2026, 12, 24, 10, 0))
 
 
 def test_off_topic_questions_find_nothing():
