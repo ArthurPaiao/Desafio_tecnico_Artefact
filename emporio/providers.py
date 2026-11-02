@@ -154,7 +154,7 @@ class OpenAICompatClient:
 
 PROVIDERS = {
     "gemini": {"base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
-               "key_envs": ("GEMINI_API_KEY", "GOOGLE_API_KEY"), "model": "gemini-3.8-flash"},
+               "key_envs": ("GEMINI_API_KEY", "GOOGLE_API_KEY"), "model": "gemini-3.5-flash-lite"},
     "anthropic": {"key_envs": ("ANTHROPIC_API_KEY",), "model": "claude-sonnet-5-5"},
     "openai-compatible": {"key_envs": ("EMPORIO_API_KEY",), "model": None},  # base URL from EMPORIO_BASE_URL
 }
