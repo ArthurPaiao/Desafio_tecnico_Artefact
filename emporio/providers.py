@@ -1,9 +1,8 @@
 """Model providers.
 
-The agent loop speaks the Anthropic Messages format (text, tool_use and
-tool_result blocks). Anthropic's SDK takes that format directly. Everything
-else (Gemini's free tier, Groq, OpenRouter, a local Ollama) exposes the OpenAI
-chat-completions format, so OpenAICompatClient translates between the two.
+The agent loop keeps the conversation as text, tool_use and tool_result
+blocks. Gemini's free tier, Groq, OpenRouter and a local Ollama all expose the
+OpenAI chat-completions format, so OpenAICompatClient translates between the two.
 
 It uses only the standard library: one POST endpoint does not justify a
 dependency, and the transport can be replaced in tests.
@@ -115,7 +114,7 @@ def _urllib_post(url: str, headers: dict, body: bytes, timeout: float = 90):
 
 
 class OpenAICompatClient:
-    """Exposes `.messages.create(...)` like the Anthropic SDK, over chat-completions."""
+    """Exposes `.messages.create(...)` over the chat-completions endpoint."""
 
     def __init__(self, base_url: str, api_key: str, post=None, retries: int = 3, sleep=time.sleep,
                  auth_header: str = "Authorization"):
@@ -155,7 +154,6 @@ class OpenAICompatClient:
 PROVIDERS = {
     "gemini": {"base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
                "key_envs": ("GEMINI_API_KEY", "GOOGLE_API_KEY"), "model": "gemini-3.5-flash-lite"},
-    "anthropic": {"key_envs": ("ANTHROPIC_API_KEY",), "model": "claude-sonnet-5-5"},
     "openai-compatible": {"key_envs": ("EMPORIO_API_KEY",), "model": None},  # base URL from EMPORIO_BASE_URL
 }
 DEFAULT_PROVIDER = "gemini"
@@ -171,12 +169,6 @@ def make_client(provider: str | None = None):
     key = next((os.environ[k].strip() for k in spec["key_envs"] if os.environ.get(k, "").strip()), None)
     if not key:
         raise ProviderError(f"Defina {' ou '.join(spec['key_envs'])} (veja o README).")
-    if provider == "anthropic":
-        try:
-            import anthropic
-        except ImportError:
-            raise ProviderError("Para usar a Anthropic: pip install anthropic")
-        return anthropic.Anthropic(api_key=key), spec["model"]
     base_url = spec.get("base_url") or os.environ.get("EMPORIO_BASE_URL")
     if not base_url:
         raise ProviderError("Defina EMPORIO_BASE_URL (ex.: https://api.groq.com/openai/v1).")

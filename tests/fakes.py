@@ -1,4 +1,4 @@
-"""A scripted stand-in for the Anthropic client, so the agent loop is testable offline."""
+"""A scripted stand-in for the model client, so the agent loop is testable offline."""
 
 from types import SimpleNamespace
 

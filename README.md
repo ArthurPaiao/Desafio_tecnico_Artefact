@@ -23,10 +23,10 @@ The `.env` file is git-ignored and is read automatically. A variable already set
 | `--verbose` | Prints each tool call the agent makes |
 | `--session NAME` | Resumes (or starts) a saved conversation, stored in `sessions/` |
 | `--model ID` or `EMPORIO_MODEL` | Picks the model (default `gemini-3.5-flash-lite`) |
-| `--provider` or `EMPORIO_PROVIDER` | `gemini` (default), `anthropic`, or `openai-compatible` |
+| `--provider` or `EMPORIO_PROVIDER` | `gemini` (default) or `openai-compatible` |
 | `EMPORIO_NOW=2026-02-20T10:00` | Pins the store clock (see "Time" below) |
 
-Other providers: `pip install -e ".[anthropic]"` plus `ANTHROPIC_API_KEY` for Claude, or `EMPORIO_BASE_URL` and `EMPORIO_API_KEY` for any OpenAI-compatible endpoint (Groq, OpenRouter, a local Ollama).
+Other providers: set `EMPORIO_PROVIDER=openai-compatible`, `EMPORIO_BASE_URL` and `EMPORIO_API_KEY` for any OpenAI-compatible endpoint (Groq, OpenRouter, a local Ollama).
 
 Tests (99, no network, no API key needed):
 
@@ -167,7 +167,7 @@ emporio/
   store.py       hours, holidays, contact data
   clock.py       store time zone and EMPORIO_NOW
   handoff.py     human hand-off tickets
-  providers.py   Gemini / OpenAI-compatible / Anthropic clients
+  providers.py   Gemini / OpenAI-compatible client
   data.py        CSV to in-memory SQLite
   env.py         .env loader
   cli.py         terminal chat

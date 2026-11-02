@@ -3,7 +3,7 @@
     python -m emporio                      # new conversation
     python -m emporio --session maria      # resume (or start) a saved conversation
     python -m emporio --verbose            # also print each tool call the agent makes
-    python -m emporio --provider anthropic # default provider is gemini (free tier)
+    python -m emporio --provider openai-compatible  # default provider is gemini (free tier)
 """
 
 import argparse

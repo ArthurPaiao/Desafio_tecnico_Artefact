@@ -168,7 +168,7 @@ def test_provider_failure_gives_a_friendly_reply_and_keeps_the_cause(tmp_path):
 
 
 def test_make_client_reads_the_right_environment(monkeypatch):
-    for var in ("GEMINI_API_KEY", "GOOGLE_API_KEY", "ANTHROPIC_API_KEY", "EMPORIO_API_KEY",
+    for var in ("GEMINI_API_KEY", "GOOGLE_API_KEY", "EMPORIO_API_KEY",
                 "EMPORIO_BASE_URL", "EMPORIO_PROVIDER"):
         monkeypatch.delenv(var, raising=False)
     with pytest.raises(ProviderError, match="GEMINI_API_KEY"):

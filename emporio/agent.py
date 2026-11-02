@@ -1,6 +1,6 @@
 """The agent loop: model call, run requested tools, repeat until the model answers.
 
-Plain function calling against the Anthropic Messages API. No framework: the
+Plain function calling, no framework: the
 loop is about thirty lines and every decision the agent makes is visible in
 the message history.
 """
@@ -13,7 +13,7 @@ from emporio.data import load_db
 from emporio.prompt import build_system_prompt
 from emporio.tools import TOOL_DEFS, ToolBox
 
-DEFAULT_MODEL = "claude-sonnet-5-5"
+DEFAULT_MODEL = "gemini-3.5-flash-lite"
 MAX_TOOL_ROUNDS = 6
 MAX_TOKENS = 2048   # thinking models spend part of this before they start answering
 SESSIONS_DIR = Path(os.environ.get("EMPORIO_SESSIONS_DIR",
