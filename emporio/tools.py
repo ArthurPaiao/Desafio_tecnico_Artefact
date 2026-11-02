@@ -92,23 +92,29 @@ TOOL_DEFS = [
 ]
 
 
+TOOL_NAMES = {t["name"] for t in TOOL_DEFS}
+
+
 class ToolBox:
     """Runs tool calls for one conversation and keeps its security state."""
 
-    def __init__(self, conn: sqlite3.Connection, session_id: str, state_dir: Path):
+    def __init__(self, conn: sqlite3.Connection, session_id: str, state_dir: Path,
+                 failed_verifications: int = 0):
         self.conn = conn
         self.session_id = session_id
         self.state_dir = state_dir
-        self.failed_verifications = 0
+        self.failed_verifications = failed_verifications   # saved with the session
 
     def call(self, name: str, args: dict) -> dict:
-        handler = getattr(self, f"_{name}", None)
-        if handler is None:
+        # The model chooses the name, so only the declared tools can be reached.
+        if name not in TOOL_NAMES:
             return {"error": f"Ferramenta desconhecida: {name}"}
         try:
-            return handler(**(args or {}))
+            return getattr(self, f"_{name}")(**(args or {}))
         except (TypeError, ValueError) as e:
             return {"error": f"Argumentos inválidos para {name}: {e}"}
+        except Exception as e:   # a tool bug must not abort the whole conversation turn
+            return {"error": f"Falha ao executar {name}: {type(e).__name__}"}
 
     # data -------------------------------------------------------------
     def _search_products(self, **kw):
@@ -128,9 +134,7 @@ class ToolBox:
                                "pedidos: ofereça encaminhar a um atendente (escalate_to_human)."}
         result = fn(self.conn, int(order_id), contact, **extra)
         if result.get("verified") is False:
-            self.failed_verifications += 1
-        elif result.get("verified"):
-            self.failed_verifications = 0
+            self.failed_verifications += 1   # never reset on success: alternating with a valid lookup must not help a guesser
         return result
 
     def _get_order_status(self, order_id, contact):

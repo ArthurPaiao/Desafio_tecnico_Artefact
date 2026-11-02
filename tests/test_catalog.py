@@ -109,8 +109,12 @@ def test_accent_insensitive_query(db):
     assert catalog.search_products(db, query="aco folk")["total_found"] == catalog.search_products(db, query="aço folk")["total_found"]
 
 
-def test_acoustic_drum_kit_needs_special_freight(db):
-    assert catalog.get_product(db, product_id=139, city="Campo Grande")["shipping"]["method"] == "special_quote"
+def test_large_instruments_use_special_freight_only_outside_campo_grande(db):
+    # Manual 5.2 (other cities) is where the individually quoted freight is described.
+    # 5.1 (Campo Grande) has no exception: the R$ 4.439 drum kit ships free by motoboy.
+    local = catalog.get_product(db, product_id=139, city="Campo Grande")["shipping"]
+    assert (local["method"], local["fee"]) == ("motoboy", 0.0)
+    assert catalog.get_product(db, product_id=139, city="Dourados")["shipping"]["method"] == "special_quote"
 
 
 def test_shipping_depends_on_city(db):

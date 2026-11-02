@@ -4,6 +4,7 @@ Where the manual contradicts itself, the choice made here is documented next to
 the rule and repeated in the README ("Assumptions").
 """
 
+import re
 from decimal import ROUND_HALF_UP, Decimal
 
 PIX_DISCOUNT_PERCENT = 5
@@ -22,6 +23,11 @@ MIN_INSTALLMENT = [(3, Decimal("50.00")), (6, Decimal("80.00")), (12, Decimal("1
 # towns. ASSUMPTION: only Campo Grande itself gets the local motoboy delivery;
 # every other city goes through Correios/Jadlog.
 LOCAL_CITY = "campo grande"
+
+
+def _normalize_city(city: str) -> str:
+    """'Campo Grande - MS', 'campo grande/MS' and ' Campo Grande ' are the same city."""
+    return re.split(r"\s*[-/,]\s*", city.strip().lower())[0]
 
 
 def money(value) -> Decimal:
@@ -67,14 +73,16 @@ def installment_options(total) -> list[dict]:
 
 
 def shipping(total, city: str | None, special_freight: bool = False) -> dict:
-    """Shipping rule for an order total and destination city."""
-    if special_freight:
-        return {"method": "special_quote",
-                "text": "Instrumento de grande porte: o frete é cotado individualmente pela loja."}
-    if city is None:
+    """Shipping rule for an order total and destination city. Manual 5.2 (other
+    cities) is where large instruments get an individually quoted freight; 5.1
+    (Campo Grande) has no such exception, so local buyers get the motoboy rule."""
+    if not city or not city.strip():
         return {"method": "unknown_city",
                 "text": "Informe a cidade de entrega para calcular o frete."}
-    if city.strip().lower() == LOCAL_CITY:
+    if _normalize_city(city) != LOCAL_CITY and special_freight:
+        return {"method": "special_quote",
+                "text": "Instrumento de grande porte: o frete é cotado individualmente pela loja."}
+    if _normalize_city(city) == LOCAL_CITY:
         if Decimal(str(total)) > FREE_SHIPPING_ABOVE:
             return {"method": "motoboy", "fee": 0.0,
                     "text": "Frete grátis (pedido acima de R$ 500,00). Entrega por motoboy em 1 a 3 dias úteis."}

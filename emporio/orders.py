@@ -104,6 +104,12 @@ def get_order_status(conn, order_id: int, contact: str, today: date | None = Non
     return out
 
 
+# The data has no sales channel and no flag for these, so the code cannot check them.
+EXCLUSIONS_NOTE = ("Aviso: o direito de arrependimento vale para compras online, e o manual (4.4) exclui "
+                   "itens personalizados ou sob encomenda e itens de promoção de liquidação com aviso "
+                   "de \"venda final\". Se o cliente comprou algo assim, encaminhar a um atendente.")
+
+
 def check_return_eligibility(conn, order_id: int, contact: str, reason: str,
                              today: date | None = None) -> dict:
     """Apply manual section 4 to one order.
@@ -141,6 +147,12 @@ def check_return_eligibility(conn, order_id: int, contact: str, reason: str,
     basis = {"receipt_date_is_estimated": True, "received_on": order["estimated_delivery"],
              "days_since_receipt": since_receipt, "days_since_purchase": since_purchase}
 
+    if since_receipt < 0:
+        return result("needs_human",
+                      f"A entrega estimada ({order['estimated_delivery']}) ainda não chegou, embora o "
+                      "pedido conste como entregue. Encaminhar a um atendente para conferir a data real.",
+                      **basis)
+
     if reason in ("arrependimento", "preferencia"):
         if since_receipt > RETURN_WINDOW_DAYS:
             return result("not_eligible",
@@ -151,11 +163,11 @@ def check_return_eligibility(conn, order_id: int, contact: str, reason: str,
             return result("eligible",
                           "Dentro do prazo de arrependimento. Condições: embalagem original, sem sinais "
                           "de uso, com acessórios e manuais. Reembolso na mesma forma de pagamento em "
-                          "até 10 dias úteis, e o frete da devolução é por conta da loja.", **basis)
+                          "até 10 dias úteis, e o frete da devolução é por conta da loja. " + EXCLUSIONS_NOTE, **basis)
         return result("eligible_subject_to_stock",
                       "Dentro do prazo para troca por preferência, sujeita à disponibilidade do produto "
                       "desejado. Produto em perfeito estado e na embalagem original. A diferença de "
-                      "valor é cobrada ou reembolsada.", **basis)
+                      "valor é cobrada ou reembolsada. " + EXCLUSIONS_NOTE, **basis)
 
     # defect
     if since_purchase <= DEFECT_EXCHANGE_DAYS:

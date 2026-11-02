@@ -32,4 +32,5 @@ def test_shipping_rules():
     assert pricing.shipping(500.01, "campo grande")["fee"] == 0.0
     assert pricing.shipping(100, "Dourados")["method"] == "correios_jadlog"
     assert pricing.shipping(100, None)["method"] == "unknown_city"
-    assert pricing.shipping(4439, "Campo Grande", special_freight=True)["method"] == "special_quote"
+    assert pricing.shipping(4439, "Campo Grande", special_freight=True)["method"] == "motoboy"
+    assert pricing.shipping(4439, "Dourados", special_freight=True)["method"] == "special_quote"

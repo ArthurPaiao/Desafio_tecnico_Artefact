@@ -7,6 +7,7 @@ the message history.
 
 import json
 import os
+import re
 from pathlib import Path
 
 from emporio.data import load_db
@@ -34,6 +35,8 @@ def _block_to_dict(block) -> dict:
 class Agent:
     def __init__(self, client, session_id: str, model: str | None = None,
                  state_dir: Path = SESSIONS_DIR, conn=None, on_tool_call=None):
+        if not re.fullmatch(r"[A-Za-z0-9_-]{1,64}", session_id):
+            raise ValueError("session id: use only letters, digits, '-' and '_' (max 64)")
         self.client = client
         self.model = model or os.environ.get("EMPORIO_MODEL", DEFAULT_MODEL)
         self.session_id = session_id
@@ -51,12 +54,15 @@ class Agent:
 
     def _load(self) -> list[dict]:
         if self._path.exists():
-            return json.loads(self._path.read_text(encoding="utf-8"))["messages"]
+            saved = json.loads(self._path.read_text(encoding="utf-8"))
+            self.tools.failed_verifications = saved.get("failed_verifications", 0)
+            return saved["messages"]
         return []
 
     def _save(self) -> None:
         self.state_dir.mkdir(parents=True, exist_ok=True)
-        self._path.write_text(json.dumps({"session_id": self.session_id, "messages": self.messages},
+        self._path.write_text(json.dumps({"session_id": self.session_id, "messages": self.messages,
+                                          "failed_verifications": self.tools.failed_verifications},
                                          ensure_ascii=False, indent=1), encoding="utf-8")
 
     # conversation -----------------------------------------------------

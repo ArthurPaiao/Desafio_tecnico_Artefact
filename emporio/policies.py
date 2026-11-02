@@ -19,7 +19,7 @@ POLICY_FILE = Path(__file__).resolve().parent.parent / "data" / "store_policies.
 
 STOPWORDS = set("""a o as os um uma de do da dos das em no na nos nas por para com sem e ou que se
 ao aos ha ja mais muito como qual quais quando onde eu voce meu minha seu sua isso esta este
-sao ser foi tem ter pode posso podem loja""".split())
+sao ser foi tem ter pode posso podem loja tempo quanto""".split())
 
 BM25_K1, BM25_B, TITLE_WEIGHT = 1.5, 0.75, 3
 # Chosen from observed scores: off-topic questions top out near 1.9, the weakest
@@ -91,6 +91,13 @@ def search_policies(query: str, top_k: int = 3) -> dict:
     best = scored[0][0]
     hits = [{"section": c["section"], "title": c["title"], "text": c["text"], "score": round(s, 2)}
             for s, c in scored[:top_k] if s >= MIN_SCORE and s >= RELATIVE_CUTOFF * best]
+    # A hit on a section intro ("4. Trocas e Devoluções") brings its subsections along:
+    # the intro is short, so it outranks the subsection that holds the actual rule (4.1: 7 days).
+    for hit in list(hits):
+        if "." not in hit["section"]:
+            have = {h["section"] for h in hits}
+            hits += [{"section": c["section"], "title": c["title"], "text": c["text"], "score": 0.0}
+                     for c in chunks if c["section"].startswith(hit["section"] + ".") and c["section"] not in have]
     if not hits:
         return {"found": False,
                 "note": "Nenhuma política cobre isso. Não invente uma regra: diga que vai confirmar "

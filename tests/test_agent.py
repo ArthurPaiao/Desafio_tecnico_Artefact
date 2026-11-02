@@ -89,12 +89,46 @@ def test_order_lookup_locks_after_repeated_failures(db, tmp_path):
     assert box.call("check_return_eligibility", {"order_id": 7, "contact": "x", "reason": "defeito"})["locked"]
 
 
-def test_a_successful_lookup_resets_the_counter(db, tmp_path):
+def test_a_successful_lookup_does_not_reset_the_counter(db, tmp_path):
+    # Otherwise a guesser could alternate two failures with a lookup of their own order.
     box = ToolBox(db, "s", tmp_path)
     box.call("get_order_status", {"order_id": 8, "contact": "chute@x.com"})
-    assert box.failed_verifications == 1
     assert box.call("get_order_status", {"order_id": 8, "contact": "anacarol.ferreira@coldmail.com"})["verified"]
-    assert box.failed_verifications == 0
+    assert box.failed_verifications == 1
+
+
+def test_lock_engages_exactly_at_the_third_failure(db, tmp_path):
+    box = ToolBox(db, "s", tmp_path)
+    for _ in range(MAX_FAILED_VERIFICATIONS - 1):
+        box.call("get_order_status", {"order_id": 8, "contact": "chute@x.com"})
+    assert box.call("get_order_status", {"order_id": 8, "contact": "anacarol.ferreira@coldmail.com"})["verified"]
+    box.call("get_order_status", {"order_id": 8, "contact": "chute@x.com"})
+    assert box.call("get_order_status", {"order_id": 8, "contact": "anacarol.ferreira@coldmail.com"})["locked"]
+    # Everything that is not an order lookup keeps working.
+    assert "error" not in box.call("get_store_info", {})
+    assert box.call("escalate_to_human", {"reason": "other", "summary": "teste"})["ticket"].startswith("ATD-")
+
+
+def test_lock_survives_a_resumed_session(make_agent):
+    agent, _ = make_agent([text("a")], session="lock")
+    agent.tools.failed_verifications = MAX_FAILED_VERIFICATIONS
+    agent.reply("oi")
+    again, _ = make_agent([text("b")], session="lock")
+    assert again.tools.failed_verifications == MAX_FAILED_VERIFICATIONS
+
+
+def test_only_declared_tools_can_be_called(db, tmp_path):
+    box = ToolBox(db, "s", tmp_path)
+    box.failed_verifications = 3
+    for name in ("_init__", "verified", "init", "call", "__class__"):
+        assert "error" in box.call(name, {"conn": "x", "session_id": "s", "state_dir": "/tmp"})
+    assert box.failed_verifications == 3 and box.conn is db
+
+
+def test_session_id_cannot_escape_the_sessions_folder(db, tmp_path):
+    for bad in ("../x", "/tmp/x", "a/b", "", "x" * 65):
+        with pytest.raises(ValueError):
+            Agent(FakeClient([]), bad, state_dir=tmp_path, conn=db)
 
 
 def test_escalation_writes_a_numbered_ticket(db, tmp_path):

@@ -10,6 +10,7 @@ dependency, and the transport can be replaced in tests.
 
 import json
 import os
+import re
 import time
 import urllib.error
 import urllib.request
@@ -147,7 +148,7 @@ class OpenAICompatClient:
                 wait = response_headers.get("Retry-After") or response_headers.get("retry-after")
                 self.sleep(min(float(wait), 30) if wait and wait.replace(".", "").isdigit() else 2 ** attempt)
                 continue
-            raise ProviderError(f"HTTP {status} do provedor: {text[:300]}")
+            raise ProviderError(f"HTTP {status} do provedor: {text[:300].replace(self.api_key, '***')}")
         raise ProviderError("Provedor indisponível após várias tentativas.")
 
 
@@ -172,4 +173,6 @@ def make_client(provider: str | None = None):
     base_url = spec.get("base_url") or os.environ.get("EMPORIO_BASE_URL")
     if not base_url:
         raise ProviderError("Defina EMPORIO_BASE_URL (ex.: https://api.groq.com/openai/v1).")
+    if not base_url.startswith("https://") and not re.match(r"http://(localhost|127\.0\.0\.1)([:/]|$)", base_url):
+        raise ProviderError("EMPORIO_BASE_URL deve usar https:// (http só para localhost).")
     return OpenAICompatClient(base_url, key, auth_header=spec.get("auth_header", "Authorization")), spec["model"]
