@@ -4,6 +4,8 @@ A text chat agent for a fictional musical instrument store in Campo Grande, MS (
 
 Technical case for the AI Engineer role at Artefact. Plain Python, standard library only at runtime, no agent framework.
 
+Most of the code and tests in this repository were written by Claude (Anthropic), working as my coding assistant under my direction. The business decisions, the live testing against the model and the review of the results are mine. See [Use of AI coding assistants](#use-of-ai-coding-assistants) for what was done by whom.
+
 ## Quick start
 
 Requires Python 3.10 or newer and a free Gemini API key from [Google AI Studio](https://aistudio.google.com/apikey).
@@ -151,7 +153,7 @@ Examples 4 and 5 are the non-trivial ones: they use live order data and the manu
 
 ## Use of AI coding assistants
 
-I built this with Claude (Anthropic) as the coding assistant, working step by step: data layer, pricing rules, catalog tools, order and return rules, policy search, agent loop, providers, example runner. Claude wrote most of the code and tests. My part was directing the work and the product decisions, and testing it for real:
+I built this with Claude (Anthropic) as the coding assistant, working step by step: data layer, pricing rules, catalog tools, order and return rules, policy search, agent loop, providers, example runner. Claude wrote most of the code and tests; I did not write it line by line. My part was directing the work and the product decisions, and testing it for real:
 
 - I chose the business rules where the manual was ambiguous or contradictory (tiered instalments, selling discontinued stock, Campo Grande-only local delivery, estimated receipt date, keeping both phone numbers, holiday set).
 - I ran the agent on my own machine (Windows) against the live API, and the fixes that came out of that are in the history: packaging for `pip install -e`, the missing time zone database on Windows, API key whitespace and `.env` loading, 503 and 429 behavior, and prompt corrections after reading real conversations.
